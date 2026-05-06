@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>API Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0b0e14; --bg2:#111520; --bg3:#161b27;
+  --border:#2a3450; --border2:#3a4870;
+  --accent:#4f9fff; --accent2:#00d4aa; --accent3:#f7c948; --danger:#ff5f5f;
+  --bid:#f97316; --bid2:#fb923c; --bid-bg:rgba(249,115,22,.08);
+  --ai:#a78bfa; --ai2:#c4b5fd; --ai-bg:rgba(167,139,250,.08); --ai-border:rgba(167,139,250,.3);
+  --text:#e8edf8; --text2:#8a9bc0; --text3:#4a5a80;
+  --mono:'IBM Plex Mono',monospace; --sans:'Syne',sans-serif;
+  --r:8px; --rl:14px;
+}
+body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; }
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:40px 40px; opacity:.18; pointer-events:none; z-index:0;
+}
+.wrap { position:relative; z-index:1; max-width:980px; margin:0 auto; padding:40px 20px 80px; }
+
+/* Header */
+.hdr { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:32px; }
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-icon { width:36px;height:36px;border:1.5px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center; }
+.logo-text { font-size:20px;font-weight:700; } .logo-text span { color:var(--accent); }
+.tagline { font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:3px; }
+.badge { font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--border2);border-radius:20px;color:var(--text3); }
+
+/* Mode tabs */
+.mode-tabs { display:flex; gap:0; margin-bottom:20px; border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+.mode-tab {
+  flex:1; font-family:var(--mono); font-size:12px; padding:11px 16px;
+  background:var(--bg2); color:var(--text3); border:none; cursor:pointer;
+  border-right:1px solid var(--border); transition:all .15s; text-align:center;
+}
+.mode-tab:last-child { border-right:none; }
+.mode-tab:hover { color:var(--text2); background:var(--bg3); }
+.mode-tab.active { background:var(--bg3); color:var(--accent); border-bottom:2px solid var(--accent); }
+.mode-tab.bid-tab.active { color:var(--bid); border-bottom-color:var(--bid); }
+.mode-tab.ai-tab.active  { color:var(--ai);  border-bottom-color:var(--ai); }
+
+/* Panel */
+.panel { background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:24px;margin-bottom:18px; }
+.panel-title { font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px; }
+.panel-title::before { content:'';width:6px;height:6px;background:var(--accent);border-radius:50%; }
+.panel-title.bid-title { color:var(--bid); }
+.panel-title.bid-title::before { background:var(--bid); }
+.panel-title.ai-title  { color:var(--ai); }
+.panel-title.ai-title::before  { background:var(--ai); }
+.panel.bid-panel { border-color:rgba(249,115,22,.3); }
+.panel.ai-panel  { border-color:var(--ai-border); }
+
+.grid { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px; }
+@media(max-width:620px){.grid{grid-template-columns:1fr;}}
+.full { grid-column:1/-1; }
+.field { display:flex;flex-direction:column;gap:6px; }
+label { font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:.06em; }
+
+input[type=text],input[type=password],input[type=number],select,textarea {
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 13px;
+  outline:none;width:100%;transition:border-color .2s;
+}
+input:focus,textarea:focus { border-color:var(--accent); }
+input::placeholder,textarea::placeholder { color:var(--text3); }
+textarea { resize:vertical;min-height:80px;line-height:1.5; }
+.hint { font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:2px; }
+
+.key-wrap { position:relative; }
+.key-wrap input { padding-right:42px; }
+.eye { position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);display:flex;align-items:center;padding:4px; }
+.eye:hover { color:var(--text2); }
+
+/* Auth pills */
+.auth-pills { display:flex;flex-wrap:wrap;gap:7px;margin-top:2px; }
+.auth-pill {
+  font-family:var(--mono);font-size:11px;padding:7px 13px;
+  border:1px solid var(--border);border-radius:20px;
+  background:var(--bg3);color:var(--text2);cursor:pointer;
+  transition:all .15s;position:relative;z-index:2;
+}
+.auth-pill:hover { border-color:var(--border2);color:var(--text); }
+.auth-pill.active { border-color:var(--accent);color:var(--accent);background:rgba(79,159,255,.1); }
+
+/* Buttons */
+.btn-primary {
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--accent);color:#0b0e14;font-family:var(--sans);
+  font-size:14px;font-weight:700;padding:12px 26px;
+  border:none;border-radius:var(--r);cursor:pointer;
+  transition:opacity .15s,transform .1s;margin-top:8px;
+}
+.btn-primary:hover:not(:disabled){opacity:.85;}
+.btn-primary:active:not(:disabled){transform:scale(.97);}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary.green { background:var(--accent2); }
+.btn-primary.orange { background:var(--bid); }
+.btn-primary.purple { background:var(--ai); }
+
+.btn-template {
+  display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+  padding:8px 16px;background:var(--bid-bg);border:1px solid var(--bid);
+  border-radius:var(--r);color:var(--bid);cursor:pointer;transition:all .15s;
+  font-weight:600;
+}
+.btn-template:hover{background:rgba(249,115,22,.16);}
+
+.dl-btn {
+  display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;
+  padding:7px 14px;background:transparent;border:1px solid var(--accent2);
+  border-radius:var(--r);color:var(--accent2);cursor:pointer;transition:background .15s;
+}
+.dl-btn:hover{background:rgba(0,212,170,.08);}
+
+.load-more-btn {
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;padding:13px;font-family:var(--mono);font-size:13px;
+  background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--r);
+  color:var(--text2);cursor:pointer;transition:all .2s;margin-top:12px;
+}
+.load-more-btn:hover{border-color:var(--bid);color:var(--bid);}
+.load-more-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Status */
+.status { display:none;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--text2);padding:12px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px; }
+.status.show{display:flex;}
+.spinner{width:13px;height:13px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dot.ok{background:var(--accent2);} .dot.err{background:var(--danger);}
+
+/* Summary */
+.summary{display:none;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.summary.show{display:grid;}
+@media(max-width:560px){.summary{grid-template-columns:repeat(2,1fr);}}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 14px;}
+.stat .val{font-size:26px;font-weight:700;line-height:1;margin-bottom:5px;}
+.stat .lbl{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;}
+.stat.ok .val{color:var(--accent2);} .stat.err .val{color:var(--danger);}
+.stat.info .val{color:var(--accent);} .stat.warn .val{color:var(--accent3);}
+
+/* Results panel */
+.results{display:none;} .results.show{display:block;}
+.results-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.results-title{font-family:var(--mono);font-size:11px;color:var(--accent2);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.results-title::before{content:'';width:6px;height:6px;background:var(--accent2);border-radius:50%;}
+
+/* Direct result box */
+.direct-result{display:none;} .direct-result.show{display:block;}
+.direct-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-top:16px;}
+.direct-box-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.direct-box-hdr .url-label{font-family:var(--mono);font-size:11px;color:var(--text2);word-break:break-all;}
+.status-pill{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:20px;flex-shrink:0;}
+.status-pill.ok{background:rgba(0,212,170,.12);color:var(--accent2);border:1px solid rgba(0,212,170,.3);}
+.status-pill.err{background:rgba(255,95,95,.12);color:var(--danger);border:1px solid rgba(255,95,95,.3);}
+.direct-body{padding:14px;}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;padding:5px 12px;margin-bottom:9px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--text3);cursor:pointer;transition:all .15s;}
+.copy-btn:hover{border-color:var(--border2);color:var(--text2);}
+.copy-btn.copied{border-color:var(--accent2);color:var(--accent2);}
+pre{font-family:var(--mono);font-size:12px;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:500px;overflow-y:auto;}
+
+/* Endpoint list */
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+#filter-input{flex:1;min-width:180px;font-size:12px;padding:8px 12px;}
+.mpills{display:flex;gap:6px;flex-wrap:wrap;}
+.mpill{font-family:var(--mono);font-size:10px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer;transition:all .12s;}
+.mpill:hover{border-color:var(--border2);color:var(--text2);}
+.mpill.active{background:#202840;border-color:var(--border2);color:var(--text);}
+.ep-list{display:flex;flex-direction:column;gap:7px;}
+.ep-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .15s;}
+.ep-card:hover{border-color:var(--border2);}
+.ep-card.ec-err{border-left:3px solid var(--danger);}
+.ep-head{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;user-select:none;}
+.mthd{font-family:var(--mono);font-size:10px;font-weight:500;padding:3px 8px;border-radius:4px;flex-shrink:0;}
+.GET    {background:rgba(0,212,170,.12);color:var(--accent2);border:1px solid rgba(0,212,170,.3);}
+.POST   {background:rgba(79,159,255,.12);color:var(--accent);border:1px solid rgba(79,159,255,.3);}
+.PUT    {background:rgba(247,201,72,.12);color:var(--accent3);border:1px solid rgba(247,201,72,.3);}
+.PATCH  {background:rgba(247,201,72,.12);color:var(--accent3);border:1px solid rgba(247,201,72,.3);}
+.DELETE {background:rgba(255,95,95,.12);color:var(--danger);border:1px solid rgba(255,95,95,.3);}
+.GRAPHQL{background:rgba(224,59,190,.12);color:#e03bbe;border:1px solid rgba(224,59,190,.3);}
+.ep-path{font-family:var(--mono);font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ep-desc{font-family:var(--mono);font-size:11px;color:var(--text3);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chevron{color:var(--text3);flex-shrink:0;transition:transform .2s;font-size:12px;}
+.ep-card.open .chevron{transform:rotate(90deg);}
+.ep-body{display:none;border-top:1px solid var(--border);padding:14px;}
+.ep-card.open .ep-body{display:block;}
+.ep-err{font-family:var(--mono);font-size:12px;color:var(--danger);padding:10px 14px;background:rgba(255,95,95,.06);border-radius:6px;}
+.pagination{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.pg-btn{font-family:var(--mono);font-size:12px;padding:6px 14px;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:5px;cursor:pointer;transition:all .12s;}
+.pg-btn:hover:not(:disabled){border-color:var(--border2);}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
+.pg-info{font-family:var(--mono);font-size:11px;color:var(--text3);}
+
+/* Extra params table */
+.param-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+.param-row input{flex:1;}
+.rm-btn{background:none;border:1px solid var(--border);color:var(--danger);border-radius:5px;cursor:pointer;padding:6px 10px;font-size:14px;flex-shrink:0;}
+.add-btn{font-family:var(--mono);font-size:11px;background:none;border:1px solid var(--border);color:var(--accent);border-radius:5px;cursor:pointer;padding:6px 14px;transition:all .15s;}
+.add-btn:hover{border-color:var(--accent);background:rgba(79,159,255,.06);}
+
+/* ─── Bidassist styles ──────────────────────────────────────────────────── */
+.bid-banner {
+  display:flex;align-items:center;gap:14px;padding:14px 18px;
+  background:var(--bid-bg);border:1px solid rgba(249,115,22,.35);
+  border-radius:var(--r);margin-bottom:16px;
+}
+.bid-banner-icon { font-size:22px; flex-shrink:0; }
+.bid-banner-text { flex:1; }
+.bid-banner-text strong { color:var(--bid);font-size:14px; }
+.bid-banner-text p { font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:3px; }
+
+.tender-grid { display:flex;flex-direction:column;gap:12px; margin-top:6px; }
+.tender-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);
+  overflow:hidden;transition:border-color .2s,transform .15s;
+}
+.tender-card:hover { border-color:var(--bid);transform:translateY(-1px); }
+.tc-head {
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:16px 18px 12px;
+}
+.tc-title { font-size:14px;font-weight:600;color:var(--text);line-height:1.45;flex:1; }
+.tc-source-badge {
+  font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:10px;
+  background:rgba(249,115,22,.12);color:var(--bid);border:1px solid rgba(249,115,22,.3);
+  flex-shrink:0;white-space:nowrap;
+}
+.tc-meta { display:flex;flex-wrap:wrap;gap:8px 20px;padding:0 18px 12px; }
+.tc-meta-item { display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--text2); }
+.tc-meta-item svg { opacity:.6; flex-shrink:0; }
+.tc-divider { height:1px;background:var(--border);margin:0 18px; }
+.tc-body { padding:12px 18px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap; }
+.tc-eligibility { flex:1;min-width:200px;font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.6; }
+.tc-eligibility strong { color:var(--text2);display:block;margin-bottom:4px;font-size:10px;text-transform:uppercase;letter-spacing:.08em; }
+.tc-actions { display:flex;gap:8px;flex-wrap:wrap;align-items:center; }
+.btn-pdf {
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
+  padding:7px 13px;background:transparent;border:1px solid var(--danger);
+  border-radius:var(--r);color:var(--danger);cursor:pointer;transition:all .15s;text-decoration:none;
+}
+.btn-pdf:hover{background:rgba(255,95,95,.08);}
+.btn-detail {
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;
+  padding:7px 13px;background:transparent;border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--text2);cursor:pointer;transition:all .15s;
+}
+.btn-detail:hover{border-color:var(--bid);color:var(--bid);}
+.tc-empty { padding:40px;text-align:center;font-family:var(--mono);font-size:13px;color:var(--text3); }
+
+.bid-summary-row { display:none;flex-wrap:wrap;gap:10px;margin-bottom:18px; }
+.bid-summary-row.show { display:flex; }
+.bid-stat { display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);font-family:var(--mono);font-size:12px;color:var(--text2); }
+.bid-stat span { color:var(--bid);font-weight:600; }
+
+.feed-chips { display:flex;flex-wrap:wrap;gap:7px;margin-top:6px; }
+.feed-chip { font-family:var(--mono);font-size:10px;padding:5px 10px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--text3);cursor:pointer;transition:all .12s;user-select:none; }
+.feed-chip:hover{border-color:var(--border2);color:var(--text2);}
+.feed-chip.selected{background:var(--bid-bg);border-color:var(--bid);color:var(--bid);}
+
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg3);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* PDF viewer */
+.pdf-viewer-wrap { margin-top:10px; }
+.pdf-viewer-toolbar {
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--bg3);border:1px solid var(--border);border-bottom:none;
+  border-radius:var(--r) var(--r) 0 0;flex-wrap:wrap;
+}
+.pdf-viewer-toolbar span { font-family:var(--mono);font-size:11px;color:var(--text2); }
+.pdf-iframe { width:100%;height:780px;border:1px solid var(--border);border-radius:0 0 var(--r) var(--r);background:#fff;display:block; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PDF AI TERMINAL
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Banner */
+.ai-banner {
+  display:flex;align-items:center;gap:14px;padding:14px 18px;
+  background:var(--ai-bg);border:1px solid var(--ai-border);
+  border-radius:var(--r);margin-bottom:16px;
+}
+.ai-banner-icon { font-size:22px;flex-shrink:0; }
+.ai-banner-text strong { color:var(--ai);font-size:14px; }
+.ai-banner-text p { font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:3px; }
+
+/* Terminal window */
+.terminal-wrap {
+  background:var(--bg2);border:1px solid var(--ai-border);border-radius:var(--rl);
+  overflow:hidden;margin-bottom:18px;
+}
+.terminal-titlebar {
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  background:var(--bg3);border-bottom:1px solid var(--border);
+}
+.terminal-dots { display:flex;gap:6px; }
+.terminal-dots span { width:11px;height:11px;border-radius:50%; }
+.terminal-dots .d1{background:#ff5f57;} .terminal-dots .d2{background:#febc2e;} .terminal-dots .d3{background:#28c840;}
+.terminal-title { font-family:var(--mono);font-size:11px;color:var(--text3);flex:1;text-align:center; }
+.terminal-badge { font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:10px;background:var(--ai-bg);color:var(--ai);border:1px solid var(--ai-border); }
+
+/* Message log */
+.terminal-log {
+  min-height:220px;max-height:480px;overflow-y:auto;
+  padding:16px 18px;display:flex;flex-direction:column;gap:14px;
+}
+.terminal-empty {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:200px;gap:10px;color:var(--text3);font-family:var(--mono);font-size:12px;text-align:center;
+}
+.terminal-empty .t-icon { font-size:32px;opacity:.4; }
+
+/* Chat bubbles */
+.msg { display:flex;flex-direction:column;gap:4px;max-width:92%; }
+.msg.user { align-self:flex-end;align-items:flex-end; }
+.msg.assistant { align-self:flex-start;align-items:flex-start; }
+
+.msg-role {
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:0 4px;
+}
+.msg.user .msg-role     { color:var(--accent); }
+.msg.assistant .msg-role { color:var(--ai); }
+
+.msg-bubble {
+  padding:10px 14px;border-radius:10px;font-family:var(--mono);font-size:12.5px;
+  line-height:1.65;max-width:100%;word-break:break-word;
+}
+.msg.user .msg-bubble {
+  background:rgba(79,159,255,.12);border:1px solid rgba(79,159,255,.25);color:var(--text);
+  border-bottom-right-radius:3px;
+}
+.msg.assistant .msg-bubble {
+  background:var(--ai-bg);border:1px solid var(--ai-border);color:var(--text);
+  border-bottom-left-radius:3px;
+  white-space:pre-wrap;
+}
+.msg.assistant.thinking .msg-bubble {
+  color:var(--text3);font-style:italic;
+}
+
+/* Typing dots */
+.typing-dots { display:inline-flex;gap:4px;align-items:center; }
+.typing-dots span {
+  width:5px;height:5px;background:var(--ai);border-radius:50%;
+  animation:tdot .9s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2){animation-delay:.15s;}
+.typing-dots span:nth-child(3){animation-delay:.3s;}
+@keyframes tdot{0%,80%,100%{opacity:.2;transform:scale(.8);}40%{opacity:1;transform:scale(1);}}
+
+/* Token badge */
+.msg-tokens { font-family:var(--mono);font-size:10px;color:var(--text3);padding:0 4px; }
+
+/* Input row */
+.terminal-input-area {
+  display:flex;align-items:flex-end;gap:10px;
+  padding:14px 16px;border-top:1px solid var(--border);background:var(--bg3);
+}
+.terminal-textarea {
+  flex:1;background:var(--bg2) !important;border:1px solid var(--border) !important;
+  border-radius:8px !important;font-size:13px !important;padding:10px 13px !important;
+  min-height:42px;max-height:140px;resize:none;color:var(--text) !important;
+  transition:border-color .2s !important;line-height:1.5;
+}
+.terminal-textarea:focus { border-color:var(--ai) !important;outline:none; }
+.terminal-send-btn {
+  display:flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:8px;
+  background:var(--ai);border:none;cursor:pointer;flex-shrink:0;
+  transition:opacity .15s,transform .1s;
+}
+.terminal-send-btn:hover:not(:disabled){opacity:.85;}
+.terminal-send-btn:active:not(:disabled){transform:scale(.93);}
+.terminal-send-btn:disabled{opacity:.35;cursor:not-allowed;background:var(--border2);}
+.terminal-send-btn svg { color:#0b0e14; }
+
+/* Source selector + clear row */
+.ai-controls { display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px; }
+.ai-source-label { font-family:var(--mono);font-size:11px;color:var(--text3); }
+.ai-source-val { font-family:var(--mono);font-size:11px;color:var(--ai);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.clear-btn {
+  margin-left:auto;font-family:var(--mono);font-size:11px;padding:5px 12px;
+  background:none;border:1px solid var(--border);border-radius:5px;
+  color:var(--text3);cursor:pointer;transition:all .15s;
+}
+.clear-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+/* Token summary bar */
+.token-bar {
+  display:none;flex-wrap:wrap;gap:10px;margin-bottom:14px;
+}
+.token-bar.show{display:flex;}
+.token-stat {
+  display:flex;align-items:center;gap:7px;padding:7px 12px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  font-family:var(--mono);font-size:11px;color:var(--text2);
+}
+.token-stat span { color:var(--ai);font-weight:600; }
+
+/* Suggested questions */
+.suggestions { display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px; }
+.suggestion-chip {
+  font-family:var(--mono);font-size:11px;padding:6px 12px;
+  border:1px solid var(--border);border-radius:5px;background:var(--bg3);
+  color:var(--text3);cursor:pointer;transition:all .15s;
+}
+.suggestion-chip:hover{border-color:var(--ai);color:var(--ai);background:var(--ai-bg);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="7" height="7" rx="1.5" stroke="#4f9fff" stroke-width="1.5"/><rect x="10" y="1" width="7" height="7" rx="1.5" stroke="#4f9fff" stroke-width="1.5"/><rect x="1" y="10" width="7" height="7" rx="1.5" stroke="#4f9fff" stroke-width="1.5"/><rect x="10" y="10" width="7" height="7" rx="1.5" stroke="#00d4aa" stroke-width="1.5"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">API<span>Explorer</span></div>
+        <div class="tagline">// generic adapter layer</div>
+      </div>
+    </div>
+    <div class="badge">python-powered</div>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('direct')">⚡ Direct Fetch <span style="color:var(--text3);font-size:10px">— data URLs, govt APIs</span></button>
+    <button class="mode-tab" onclick="switchMode('spec')">📋 Spec Explorer <span style="color:var(--text3);font-size:10px">— OpenAPI / Swagger / GraphQL</span></button>
+    <button class="mode-tab bid-tab" onclick="switchMode('bid')">🏗 Bidassist <span style="color:var(--text3);font-size:10px">— tender search</span></button>
+    <button class="mode-tab ai-tab" onclick="switchMode('ai')">✦ PDF Terminal <span style="color:var(--text3);font-size:10px">— ask Claude</span></button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- DIRECT FETCH MODE                                                   -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="direct-mode">
+    <div class="panel">
+      <div class="panel-title">direct data fetch</div>
+
+      <div style="margin-bottom:16px;">
+        <button class="btn-template" onclick="fillBidassistTemplate()">
+          🏗 Use Bidassist Template
+        </button>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:10px;">
+          Auto-fills URL + auth for partner-api.bidassist.in
+        </span>
+      </div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>DATA URL</label>
+          <input type="text" id="d-url" placeholder="https://api.data.gov.in/resource/d01b7cad-14fa-434c-aee6-67a22e37d03b"/>
+          <div class="hint">Paste any REST data endpoint — no spec file needed</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>AUTH SCHEME</label>
+          <div class="auth-pills" id="d-auth-pills">
+            <button class="auth-pill active" data-scheme="query-param" onclick="dSelectScheme('query-param')">Query Param</button>
+            <button class="auth-pill" data-scheme="apikey-header" onclick="dSelectScheme('apikey-header')">Header Key</button>
+            <button class="auth-pill" data-scheme="x-api-key" onclick="dSelectScheme('x-api-key')">x-api-key</button>
+            <button class="auth-pill" data-scheme="bearer" onclick="dSelectScheme('bearer')">Bearer</button>
+            <button class="auth-pill" data-scheme="none" onclick="dSelectScheme('none')">None</button>
+          </div>
+        </div>
+        <div class="field" id="d-token-field">
+          <label id="d-token-label">API KEY / TOKEN</label>
+          <div class="key-wrap">
+            <input type="password" id="d-token" placeholder="paste your api key…"/>
+            <button class="eye" onclick="toggleEye('d-token','d-eye')">
+              <svg id="d-eye" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="d-param-name-row">
+        <div class="field">
+          <label>PARAM / HEADER NAME</label>
+          <input type="text" id="d-param-name" value="api-key" placeholder="api-key"/>
+          <div class="hint">For data.gov.in use: <strong>api-key</strong></div>
+        </div>
+        <div class="field">
+          <label>FORMAT (optional extra param)</label>
+          <input type="text" id="d-format" value="json" placeholder="json"/>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label>EXTRA QUERY PARAMETERS</label>
+        <div id="d-extra-params"></div>
+        <button class="add-btn" style="margin-top:8px;width:fit-content" onclick="addParam()">+ Add param</button>
+      </div>
+
+      <button class="btn-primary green" onclick="runDirect()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg>
+        Fetch Data
+      </button>
+    </div>
+
+    <div class="status" id="d-status">
+      <div class="spinner" id="d-spinner"></div>
+      <div class="dot" id="d-dot" style="display:none"></div>
+      <span id="d-status-msg">Fetching…</span>
+    </div>
+
+    <div class="direct-result" id="direct-result">
+      <div class="results-hdr">
+        <div class="results-title">response data</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <!-- "Ask Claude about this PDF" button — shown when result is a PDF -->
+          <button class="dl-btn" id="d-ask-ai-btn" onclick="sendPdfToAI()" style="display:none;border-color:var(--ai);color:var(--ai);">
+            ✦ Ask Claude
+          </button>
+          <button class="dl-btn" onclick="downloadDirect()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download JSON
+          </button>
+        </div>
+      </div>
+      <div class="direct-box">
+        <div class="direct-box-hdr">
+          <span class="url-label" id="d-result-url"></span>
+          <span class="status-pill ok" id="d-result-status">200 OK</span>
+        </div>
+        <div class="direct-body">
+          <button class="copy-btn" id="d-copy-btn" onclick="copyDirect()">📋 Copy</button>
+          <pre id="d-result-pre"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- SPEC EXPLORER MODE                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="spec-mode" style="display:none">
+    <div class="panel">
+      <div class="panel-title">spec explorer config</div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>API SPEC URL OR FILE PATH</label>
+          <input type="text" id="s-url" placeholder="https://petstore3.swagger.io/api/v3/openapi.json"/>
+          <div class="hint">Supports OpenAPI 3.x · Swagger 2.x · GraphQL introspection endpoint · local file path</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>AUTH SCHEME</label>
+          <div class="auth-pills" id="s-auth-pills">
+            <button class="auth-pill active" data-scheme="bearer" onclick="sSelectScheme('bearer')">Bearer</button>
+            <button class="auth-pill" data-scheme="apikey-header" onclick="sSelectScheme('apikey-header')">API-Key Header</button>
+            <button class="auth-pill" data-scheme="query-param" onclick="sSelectScheme('query-param')">Query Param</button>
+            <button class="auth-pill" data-scheme="basic" onclick="sSelectScheme('basic')">Basic</button>
+            <button class="auth-pill" data-scheme="none" onclick="sSelectScheme('none')">None</button>
+          </div>
+        </div>
+        <div class="field" id="s-token-field">
+          <label id="s-token-label">API KEY / TOKEN</label>
+          <div class="key-wrap">
+            <input type="password" id="s-token" placeholder="paste your key…"/>
+            <button class="eye" onclick="toggleEye('s-token','s-eye')">
+              <svg id="s-eye" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="s-basic-row" style="display:none">
+        <div class="field"><label>USERNAME</label><input type="text" id="s-user" placeholder="username"/></div>
+        <div class="field"><label>PASSWORD</label><input type="password" id="s-pass" placeholder="password"/></div>
+      </div>
+
+      <div class="grid">
+        <div class="field" id="s-header-name-field" style="display:none">
+          <label>HEADER / PARAM NAME</label>
+          <input type="text" id="s-header-name" value="X-API-Key"/>
+        </div>
+        <div class="field">
+          <label>CONCURRENCY LIMIT</label>
+          <input type="number" id="s-concurrency" value="10" min="1" max="50"/>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="runSpec()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg>
+        Fetch all endpoints
+      </button>
+    </div>
+
+    <div class="status" id="s-status">
+      <div class="spinner" id="s-spinner"></div>
+      <div class="dot" id="s-dot" style="display:none"></div>
+      <span id="s-status-msg">Working…</span>
+    </div>
+
+    <div class="summary" id="s-summary">
+      <div class="stat info"><div class="val" id="s-total">0</div><div class="lbl">endpoints</div></div>
+      <div class="stat ok">  <div class="val" id="s-ok">0</div>   <div class="lbl">succeeded</div></div>
+      <div class="stat err"> <div class="val" id="s-err">0</div>  <div class="lbl">failed</div></div>
+      <div class="stat warn"><div class="val" id="s-type">—</div> <div class="lbl">spec type</div></div>
+    </div>
+
+    <div class="results" id="s-results">
+      <div class="results-hdr">
+        <div class="results-title">fetched endpoints</div>
+        <button class="dl-btn" onclick="downloadSpec()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download JSON
+        </button>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="filter-input" placeholder="Filter endpoints…" oninput="applyFilter()"/>
+        <div class="mpills" id="method-pills"></div>
+      </div>
+      <div class="ep-list" id="ep-list"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- BIDASSIST MODE                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="bid-mode" style="display:none">
+    <div class="bid-banner">
+      <div class="bid-banner-icon">🏗</div>
+      <div class="bid-banner-text">
+        <strong>Bidassist Public API</strong>
+        <p>Search government tenders via partner-api.bidassist.in · POST /tender/search · x-api-key auth</p>
+      </div>
+    </div>
+
+    <div class="panel bid-panel">
+      <div class="panel-title bid-title">search configuration</div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>ENDPOINT URL</label>
+          <input type="text" id="b-url" value="https://partner-api.bidassist.in/api/public/v1/tender/search" readonly/>
+          <div class="hint">Fixed to the Bidassist tender search endpoint</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>X-API-KEY</label>
+          <div class="key-wrap">
+            <input type="password" id="b-token" placeholder="your x-api-key…"/>
+            <button class="eye" onclick="toggleEye('b-token','b-eye')">
+              <svg id="b-eye" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="hint">Sent as <code>x-api-key</code> header</div>
+        </div>
+        <div class="field">
+          <label>SEARCH TERM (keyword)</label>
+          <input type="text" id="b-search" placeholder="e.g. road construction, solar, hospital…"/>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>FEED SOURCE IDs (comma-separated)</label>
+          <input type="text" id="b-feed-ids" placeholder="e.g. CPPP, GEM, MPTENDERS"/>
+          <div class="hint">Leave blank to search all sources</div>
+        </div>
+        <div class="field">
+          <label>PAGE SIZE</label>
+          <input type="number" id="b-pagesize" value="20" min="5" max="100"/>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px">
+        <label>QUICK SELECT FEED SOURCES</label>
+        <div class="feed-chips" id="b-feed-chips">
+          <span class="feed-chip" onclick="toggleFeedChip(this,'CPPP')">CPPP</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'GEM')">GEM</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'MPTENDERS')">MPTENDERS</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'TENDERWIZARD')">TENDERWIZARD</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'EPROCURE')">EPROCURE</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'MAHATENDERS')">MAHATENDERS</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'RAJASTHAN')">RAJASTHAN</span>
+          <span class="feed-chip" onclick="toggleFeedChip(this,'DELHI')">DELHI</span>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:16px">
+        <label>JSON PAYLOAD PREVIEW</label>
+        <pre id="b-payload-preview" style="max-height:120px;font-size:11px;color:var(--text2);cursor:pointer" onclick="copyPayload()" title="Click to copy">{}</pre>
+        <div class="hint">Click to copy · Auto-updated as you type</div>
+      </div>
+
+      <button class="btn-primary orange" onclick="runBidassist(false)" id="b-run-btn">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg>
+        Search Tenders
+      </button>
+    </div>
+
+    <div class="status" id="b-status">
+      <div class="spinner" id="b-spinner"></div>
+      <div class="dot" id="b-dot" style="display:none"></div>
+      <span id="b-status-msg">Searching tenders…</span>
+    </div>
+
+    <div class="bid-summary-row" id="b-summary-row">
+      <div class="bid-stat">Page <span id="b-page-num">1</span></div>
+      <div class="bid-stat">Results this page: <span id="b-count">0</span></div>
+      <div class="bid-stat">Total loaded: <span id="b-total-loaded">0</span></div>
+      <div class="bid-stat">Has more: <span id="b-has-more">—</span></div>
+    </div>
+
+    <div id="b-results-wrap" style="display:none">
+      <div class="results-hdr" style="margin-bottom:12px">
+        <div class="results-title" style="color:var(--bid)">
+          <span style="width:6px;height:6px;background:var(--bid);border-radius:50%;display:inline-block"></span>
+          tender results
+        </div>
+        <button class="dl-btn" onclick="downloadBidassist()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download JSON
+        </button>
+      </div>
+      <div class="tender-grid" id="b-tender-grid"></div>
+      <button class="load-more-btn" id="b-load-more" onclick="runBidassist(true)" style="display:none">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        Load more results
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PDF AI TERMINAL MODE                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="ai-mode" style="display:none">
+
+    <!-- Banner -->
+    <div class="ai-banner">
+      <div class="ai-banner-icon">✦</div>
+      <div class="ai-banner-text">
+        <strong>PDF AI Terminal</strong>
+        <p>Text PDFs: instant · Scanned PDFs: auto-OCR via Tesseract (~60s) · raw bytes never sent to Gemini · context cached after first question</p>
+      </div>
+    </div>
+
+    <!-- PDF source config -->
+    <div class="panel ai-panel">
+      <div class="panel-title ai-title">pdf source</div>
+
+      <div class="grid">
+        <div class="field full">
+          <label>PDF URL OR LOCAL FILE PATH</label>
+          <input type="text" id="ai-pdf-url" placeholder="http://localhost:3000/api/tenders/1/pdf  or  /path/to/doc.pdf"/>
+          <div class="hint">
+            Supports: http/https URLs · local file paths · paste the viewUrl from the Bidassist tender JSON
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>DOCUMENT LABEL (optional)</label>
+          <input type="text" id="ai-pdf-label" placeholder="e.g. Tender NIT 001 · Annual Report 2025"/>
+          <div class="hint">Shown in the conversation and passed to the model as context</div>
+        </div>
+        <div class="field">
+          <label>GEMINI MODEL</label>
+          <select id="ai-model-select">
+            <option value="gemini-2.5-flash" selected>gemini-2.5-flash (recommended — free tier)</option>
+            <option value="gemini-2.5-flash-lite-preview-06-17">gemini-2.5-flash-lite (fastest, free tier)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (smartest, lower quota)</option>
+            <option value="gemini-2.0-flash">gemini-2.0-flash (legacy)</option>
+            <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (legacy, fast)</option>
+          </select>
+          <div class="hint">gemini-2.5-flash is the current recommended free-tier model</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn-primary purple" onclick="loadPdfForChat()" id="ai-load-btn" style="margin-top:0;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Load PDF
+        </button>
+      </div>
+
+      <!-- Quick-fill from current Direct Fetch result -->
+      <div id="ai-quick-fill-row" style="display:none;margin-top:4px;">
+        <button class="suggestion-chip" style="border-color:var(--ai);color:var(--ai);" onclick="quickFillFromDirect()">
+          ↑ Use PDF from Direct Fetch tab
+        </button>
+      </div>
+    </div>
+
+    <!-- Status for load -->
+    <div class="status" id="ai-load-status">
+      <div class="spinner" id="ai-load-spinner"></div>
+      <div class="dot" id="ai-load-dot" style="display:none"></div>
+      <span id="ai-load-status-msg">Loading PDF…</span>
+    </div>
+
+    <!-- Token summary -->
+    <div class="token-bar" id="ai-token-bar">
+      <div class="token-stat">Session input tokens: <span id="ai-in-tokens">0</span></div>
+      <div class="token-stat">Session output tokens: <span id="ai-out-tokens">0</span></div>
+      <div class="token-stat">Turns: <span id="ai-turns">0</span></div>
+    </div>
+
+    <!-- Suggested questions (shown when PDF is loaded) -->
+    <div id="ai-suggestions-wrap" style="display:none;">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px;letter-spacing:.08em;text-transform:uppercase;">try asking</div>
+      <div class="suggestions" id="ai-suggestions">
+        <span class="suggestion-chip" onclick="suggestQ(this)">What is the tender value?</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">Summarise the eligibility criteria</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">What is the bid submission deadline?</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">List all key dates</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">What documents are required?</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">What is the EMD amount?</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">Extract the pricing schedule</span>
+        <span class="suggestion-chip" onclick="suggestQ(this)">Who is the issuing authority?</span>
+      </div>
+    </div>
+
+    <!-- Terminal -->
+    <div class="terminal-wrap">
+      <!-- Title bar -->
+      <div class="terminal-titlebar">
+        <div class="terminal-dots">
+          <span class="d1"></span><span class="d2"></span><span class="d3"></span>
+        </div>
+        <div class="terminal-title" id="ai-terminal-title">PDF AI Terminal — no document loaded</div>
+        <div class="terminal-badge" id="ai-model-badge">gemini-2.5-flash</div>
+      </div>
+
+      <!-- Source + clear row -->
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg3);flex-wrap:wrap;">
+        <span class="ai-source-label">Document:</span>
+        <span class="ai-source-val" id="ai-source-display">none</span>
+        <button class="clear-btn" onclick="clearChat()">✕ Clear chat</button>
+      </div>
+
+      <!-- Message log -->
+      <div class="terminal-log" id="ai-log">
+        <div class="terminal-empty" id="ai-empty-state">
+          <div class="t-icon">✦</div>
+          <div>Load a PDF above, then ask Claude anything about it.</div>
+          <div style="color:var(--text3);font-size:11px;margin-top:4px;">
+            Works with tender documents, reports, contracts, and any text-based PDF.
+          </div>
+        </div>
+      </div>
+
+      <!-- Input row -->
+      <div class="terminal-input-area">
+        <textarea
+          class="terminal-textarea"
+          id="ai-question"
+          placeholder="Ask a question about the loaded PDF…"
+          rows="1"
+          onkeydown="aiHandleKey(event)"
+          oninput="autoGrow(this)"
+          disabled
+        ></textarea>
+        <button class="terminal-send-btn" id="ai-send-btn" onclick="askClaude()" disabled title="Send (Enter)">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- #ai-mode -->
+
+</div><!-- .wrap -->
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Global state
+// ═══════════════════════════════════════════════════════════════════════════
+var currentMode   = 'direct';
+var dScheme       = 'query-param';
+var sScheme       = 'bearer';
+var directResult  = null;
+var extraParams   = [];
+
+var specState = {
+  allEndpoints: [], allData: {}, allErrors: {},
+  specType: '', filtered: [], activeMethods: new Set(), page: 0
+};
+var PAGE = 20;
+
+var bidState = {
+  pageNumber: 0,
+  allTenders: [],
+  hasMore: false,
+  lastResult: null,
+  selectedFeedChips: new Set(),
+};
+
+// PDF AI Terminal state
+var aiState = {
+  pdfSource: '',          // URL / path passed to server
+  pdfLabel:  '',
+  history:   [],          // [{role, content}] — plain text turns only
+  loaded:    false,
+  inTokens:  0,
+  outTokens: 0,
+  turns:     0,
+};
+
+// Rate limiter
+var _rlTokens = 5, _rlLast = Date.now();
+function _rlConsume() {
+  var now = Date.now();
+  var elapsed = (now - _rlLast) / 1000;
+  _rlLast = now;
+  _rlTokens = Math.min(5, _rlTokens + elapsed * 5);
+  if (_rlTokens < 1) {
+    return new Promise(function(res) { setTimeout(res, (1 - _rlTokens) / 5 * 1000); });
+  }
+  _rlTokens -= 1;
+  return Promise.resolve();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Mode switch
+// ═══════════════════════════════════════════════════════════════════════════
+function switchMode(m) {
+  currentMode = m;
+  document.querySelectorAll('.mode-tab').forEach(function(t, i){
+    t.classList.toggle('active',
+      (i===0&&m==='direct') || (i===1&&m==='spec') || (i===2&&m==='bid') || (i===3&&m==='ai'));
+  });
+  document.getElementById('direct-mode').style.display = m==='direct'?'':'none';
+  document.getElementById('spec-mode').style.display   = m==='spec'?'':'none';
+  document.getElementById('bid-mode').style.display    = m==='bid'?'':'none';
+  document.getElementById('ai-mode').style.display     = m==='ai'?'':'none';
+  if (m === 'bid') updatePayloadPreview();
+  if (m === 'ai') checkQuickFill();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Shared helpers
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleEye(inputId, iconId) {
+  var inp  = document.getElementById(inputId);
+  var icon = document.getElementById(iconId);
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    inp.type = 'password';
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+function setStatus(prefix, msg, mode) {
+  var bar     = document.getElementById(prefix+'-status');
+  var spinner = document.getElementById(prefix+'-spinner');
+  var dot     = document.getElementById(prefix+'-dot');
+  bar.classList.add('show');
+  document.getElementById(prefix+'-status-msg').textContent = msg;
+  if (mode === 'loading') {
+    spinner.style.display = 'block'; dot.style.display = 'none';
+  } else {
+    spinner.style.display = 'none'; dot.style.display = 'block';
+    dot.className = 'dot ' + mode;
+  }
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIRECT MODE
+// ═══════════════════════════════════════════════════════════════════════════
+function dSelectScheme(s) {
+  dScheme = s;
+  document.querySelectorAll('#d-auth-pills .auth-pill').forEach(function(p){
+    p.classList.toggle('active', p.dataset.scheme===s);
+  });
+  var noToken = s === 'none';
+  document.getElementById('d-token-field').style.display    = noToken ? 'none' : '';
+  document.getElementById('d-param-name-row').style.display = noToken ? 'none' : 'grid';
+  if (s === 'query-param')   { document.getElementById('d-token-label').textContent='API KEY'; document.getElementById('d-param-name').value='api-key'; }
+  if (s === 'apikey-header') { document.getElementById('d-token-label').textContent='API KEY'; document.getElementById('d-param-name').value='X-API-Key'; }
+  if (s === 'x-api-key')     { document.getElementById('d-token-label').textContent='API KEY'; document.getElementById('d-param-name').value='x-api-key'; }
+  if (s === 'bearer')        { document.getElementById('d-token-label').textContent='BEARER TOKEN'; document.getElementById('d-param-name').value='Authorization'; }
+}
+
+function fillBidassistTemplate() {
+  document.getElementById('d-url').value = 'https://partner-api.bidassist.in/api/public/v1/tender/search';
+  dSelectScheme('x-api-key');
+  document.getElementById('d-token').focus();
+}
+
+function addParam() { extraParams.push({key:'', val:''}); renderParams(); }
+function removeParam(i) { extraParams.splice(i,1); renderParams(); }
+function renderParams() {
+  var c = document.getElementById('d-extra-params');
+  c.innerHTML = '';
+  extraParams.forEach(function(p,i){
+    var row = document.createElement('div'); row.className = 'param-row';
+    row.innerHTML =
+      '<input type="text" placeholder="key" value="'+escHtml(p.key)+'" oninput="extraParams['+i+'].key=this.value"/>'+
+      '<input type="text" placeholder="value" value="'+escHtml(p.val)+'" oninput="extraParams['+i+'].val=this.value"/>'+
+      '<button class="rm-btn" onclick="removeParam('+i+')">×</button>';
+    c.appendChild(row);
+  });
+}
+
+async function runDirect() {
+  var url = document.getElementById('d-url').value.trim();
+  if (!url) { alert('Please enter a data URL.'); return; }
+  document.getElementById('direct-result').classList.remove('show');
+  document.getElementById('d-ask-ai-btn').style.display = 'none';
+  setStatus('d','Fetching data from server…','loading');
+
+  var extra = {};
+  extraParams.forEach(function(p){ if(p.key) extra[p.key]=p.val; });
+  var fmt = document.getElementById('d-format').value.trim();
+  if (fmt) extra['format'] = fmt;
+
+  var payload = {
+    url:              url,
+    auth_scheme:      dScheme,
+    token:            document.getElementById('d-token').value.trim(),
+    header_name:      document.getElementById('d-param-name').value.trim() || 'api-key',
+    query_param_name: document.getElementById('d-param-name').value.trim() || 'api-key',
+    extra_params:     extra,
+    method:           'GET',
+  };
+
+  try {
+    await _rlConsume();
+    var resp = await fetch('/fetch-direct', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload),
+    });
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.detail || resp.statusText);
+    directResult = result;
+    setStatus('d','Success — data received ✓','ok');
+    document.getElementById('d-result-url').textContent = result.url;
+    var statusEl = document.getElementById('d-result-status');
+    statusEl.textContent = result.status_code + ' OK'; statusEl.className = 'status-pill ok';
+    var dataStr;
+    var isPdf = result.encoding === 'base64' || (result.content_type || '').includes('pdf');
+
+    if (isPdf) {
+      var b64 = result.data;
+      var binary = atob(b64);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      var blob = new Blob([bytes], {type: 'application/pdf'});
+      var blobUrl = URL.createObjectURL(blob);
+
+      document.getElementById('d-result-pre').style.display = 'none';
+      document.getElementById('d-copy-btn').style.display = 'none';
+
+      var existingViewer = document.getElementById('d-pdf-viewer');
+      if (existingViewer) existingViewer.remove();
+
+      var viewerWrap = document.createElement('div');
+      viewerWrap.id = 'd-pdf-viewer';
+      viewerWrap.className = 'pdf-viewer-wrap';
+      viewerWrap.innerHTML =
+        '<div class="pdf-viewer-toolbar">' +
+          '<span>📄 PDF document rendered inline</span>' +
+          '<a class="dl-btn" href="'+blobUrl+'" download="document.pdf">' +
+            '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg> Save PDF' +
+          '</a>' +
+        '</div>' +
+        '<iframe class="pdf-iframe" src="'+blobUrl+'"></iframe>';
+      document.querySelector('.direct-body').appendChild(viewerWrap);
+      dataStr = '[PDF — use Save PDF button above]';
+
+      // Show "Ask Claude" button
+      document.getElementById('d-ask-ai-btn').style.display = 'inline-flex';
+      // Store URL for quick transfer
+      directResult._pdfUrl = url;
+      directResult._pdfLabel = url.split('/').pop() || 'PDF Document';
+
+    } else {
+      var old = document.getElementById('d-pdf-viewer');
+      if (old) old.remove();
+      document.getElementById('d-result-pre').style.display = '';
+      document.getElementById('d-copy-btn').style.display = '';
+      dataStr = typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
+      document.getElementById('d-result-pre').textContent = dataStr.length>50000?dataStr.slice(0,50000)+'\n… (truncated)':dataStr;
+    }
+    document.getElementById('direct-result').classList.add('show');
+    checkQuickFill();
+  } catch(e) {
+    setStatus('d','Error: '+e.message,'err');
+  }
+}
+
+function copyDirect() {
+  var pre = document.getElementById('d-result-pre').textContent;
+  var btn = document.getElementById('d-copy-btn');
+  navigator.clipboard.writeText(pre).then(function(){
+    btn.classList.add('copied'); btn.textContent='✓ Copied!';
+    setTimeout(function(){ btn.classList.remove('copied'); btn.textContent='📋 Copy'; },2000);
+  });
+}
+function downloadDirect() {
+  if (!directResult) return;
+  if (directResult.encoding === 'base64' || (directResult.content_type||'').includes('pdf')) {
+    var binary = atob(directResult.data);
+    var bytes = new Uint8Array(binary.length);
+    for (var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    var blob = new Blob([bytes], {type:'application/pdf'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'document.pdf'; a.click();
+  } else {
+    _downloadJSON(directResult, 'api_data.json');
+  }
+}
+
+// "Ask Claude" button on direct PDF result
+function sendPdfToAI() {
+  if (!directResult || !directResult._pdfUrl) return;
+  document.getElementById('ai-pdf-url').value   = directResult._pdfUrl;
+  document.getElementById('ai-pdf-label').value = directResult._pdfLabel || '';
+  switchMode('ai');
+  loadPdfForChat();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPEC MODE
+// ═══════════════════════════════════════════════════════════════════════════
+function sSelectScheme(s) {
+  sScheme = s;
+  document.querySelectorAll('#s-auth-pills .auth-pill').forEach(function(p){
+    p.classList.toggle('active', p.dataset.scheme===s);
+  });
+  document.getElementById('s-token-field').style.display       = (s==='none'||s==='basic')?'none':'';
+  document.getElementById('s-basic-row').style.display         = s==='basic'?'grid':'none';
+  document.getElementById('s-header-name-field').style.display = (s==='apikey-header'||s==='query-param')?'':'none';
+}
+
+async function runSpec() {
+  var source = document.getElementById('s-url').value.trim();
+  if (!source) { alert('Please enter a spec URL or file path.'); return; }
+  document.getElementById('s-summary').classList.remove('show');
+  document.getElementById('s-results').classList.remove('show');
+  specState.allEndpoints=[]; specState.allData={}; specState.allErrors={};
+  setStatus('s','Detecting spec…','loading');
+
+  var payload = {
+    source:           source,
+    auth_scheme:      sScheme,
+    token:            document.getElementById('s-token').value.trim(),
+    header_name:      document.getElementById('s-header-name').value.trim()||'X-API-Key',
+    query_param_name: document.getElementById('s-header-name').value.trim()||'api-key',
+    username:         document.getElementById('s-user').value.trim(),
+    password:         document.getElementById('s-pass').value.trim(),
+    concurrency:      parseInt(document.getElementById('s-concurrency').value)||10,
+  };
+
+  try {
+    var resp = await fetch('/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.detail||resp.statusText);
+    specState.specType=result.spec_type; specState.allEndpoints=result.endpoints;
+    specState.allData=result.data; specState.allErrors=result.errors;
+    var ok=Object.keys(specState.allData).length; var err=Object.keys(specState.allErrors).length;
+    setStatus('s','Done — '+ok+' succeeded, '+err+' failed', ok>0?'ok':'err');
+    document.getElementById('s-total').textContent=specState.allEndpoints.length;
+    document.getElementById('s-ok').textContent=ok;
+    document.getElementById('s-err').textContent=err;
+    document.getElementById('s-type').textContent=specState.specType.toUpperCase();
+    document.getElementById('s-summary').classList.add('show');
+    var methods=Array.from(new Set(specState.allEndpoints.map(function(e){return e.method;})));
+    specState.activeMethods=new Set(methods);
+    var pillsEl=document.getElementById('method-pills'); pillsEl.innerHTML='';
+    methods.forEach(function(m){
+      var b=document.createElement('button');b.className='mpill active';b.textContent=m;
+      b.onclick=function(){if(specState.activeMethods.has(m))specState.activeMethods.delete(m);else specState.activeMethods.add(m);b.classList.toggle('active');applyFilter();};
+      pillsEl.appendChild(b);
+    });
+    document.getElementById('s-results').classList.add('show');
+    applyFilter();
+  } catch(e) { setStatus('s','Error: '+e.message,'err'); }
+}
+
+function applyFilter() {
+  var q=document.getElementById('filter-input').value.toLowerCase();
+  specState.filtered=specState.allEndpoints.filter(function(ep){
+    var key=ep.method+' '+ep.path;
+    return (key.toLowerCase().includes(q)||(ep.description||'').toLowerCase().includes(q))&&specState.activeMethods.has(ep.method);
+  });
+  specState.page=0; renderPage();
+}
+
+function renderPage() {
+  var list=document.getElementById('ep-list'); list.innerHTML='';
+  var items=specState.filtered.slice(specState.page*PAGE,(specState.page+1)*PAGE);
+  items.forEach(function(ep){
+    var key=ep.method+' '+ep.path; var data=specState.allData[key]; var err=specState.allErrors[key];
+    var card=document.createElement('div'); card.className='ep-card'+(err?' ec-err':'');
+    var head=document.createElement('div'); head.className='ep-head';
+    head.onclick=function(){card.classList.toggle('open');};
+    var badge=document.createElement('span'); badge.className='mthd '+ep.method; badge.textContent=ep.method;
+    var path=document.createElement('span'); path.className='ep-path'; path.textContent=ep.path;
+    var chev=document.createElement('span'); chev.className='chevron'; chev.textContent='▶';
+    head.appendChild(badge); head.appendChild(path);
+    if(ep.description){var d=document.createElement('span');d.className='ep-desc';d.textContent=ep.description;head.appendChild(d);}
+    head.appendChild(chev);
+    var body=document.createElement('div'); body.className='ep-body';
+    if(err){var e=document.createElement('div');e.className='ep-err';e.textContent='Error: '+err;body.appendChild(e);}
+    else{
+      var ds=(data!==undefined&&data!==null)?JSON.stringify(data,null,2):'(no data returned)';
+      var cb=document.createElement('button');cb.className='copy-btn';cb.innerHTML='📋 Copy';
+      cb.onclick=function(){navigator.clipboard.writeText(ds).then(function(){cb.classList.add('copied');cb.textContent='✓ Copied!';setTimeout(function(){cb.classList.remove('copied');cb.innerHTML='📋 Copy';},2000);});};
+      var pre=document.createElement('pre');pre.textContent=ds.length>5000?ds.slice(0,5000)+'\n… (truncated)':ds;
+      body.appendChild(cb); body.appendChild(pre);
+    }
+    card.appendChild(head); card.appendChild(body); list.appendChild(card);
+  });
+  renderPagination();
+}
+
+function renderPagination() {
+  var pg=document.getElementById('pagination'); pg.innerHTML='';
+  var total=Math.ceil(specState.filtered.length/PAGE); if(total<=1) return;
+  var prev=document.createElement('button');prev.className='pg-btn';prev.textContent='← Prev';
+  prev.disabled=specState.page===0;prev.onclick=function(){goPage(specState.page-1);};
+  var info=document.createElement('span');info.className='pg-info';
+  info.textContent='Page '+(specState.page+1)+' of '+total+' ('+specState.filtered.length+' results)';
+  var next=document.createElement('button');next.className='pg-btn';next.textContent='Next →';
+  next.disabled=specState.page>=total-1;next.onclick=function(){goPage(specState.page+1);};
+  pg.appendChild(prev);pg.appendChild(info);pg.appendChild(next);
+}
+function goPage(n){specState.page=n;renderPage();window.scrollTo({top:document.getElementById('s-results').offsetTop-20,behavior:'smooth'});}
+function downloadSpec(){_downloadJSON({spec_type:specState.specType,endpoints:specState.allEndpoints,data:specState.allData,errors:specState.allErrors},'api_data.json');}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BIDASSIST MODE
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleFeedChip(el, value) {
+  if (bidState.selectedFeedChips.has(value)) {
+    bidState.selectedFeedChips.delete(value); el.classList.remove('selected');
+  } else {
+    bidState.selectedFeedChips.add(value); el.classList.add('selected');
+  }
+  document.getElementById('b-feed-ids').value = Array.from(bidState.selectedFeedChips).join(', ');
+  updatePayloadPreview();
+}
+
+['b-search','b-feed-ids','b-pagesize'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', updatePayloadPreview);
+});
+
+function buildBidPayload(pageNumber) {
+  var searchTerm = document.getElementById('b-search').value.trim();
+  var feedRaw    = document.getElementById('b-feed-ids').value.trim();
+  var pageSize   = parseInt(document.getElementById('b-pagesize').value) || 20;
+  var feedIds    = feedRaw ? feedRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+  var payload    = { filters: { FEED_SOURCE_ID: feedIds, ENTITY_ID: [] }, pageNumber: pageNumber, pageSize: pageSize };
+  if (searchTerm) payload.filters['search_text'] = searchTerm;
+  return payload;
+}
+
+function updatePayloadPreview() {
+  document.getElementById('b-payload-preview').textContent = JSON.stringify(buildBidPayload(bidState.pageNumber), null, 2);
+}
+
+function copyPayload() {
+  var text = document.getElementById('b-payload-preview').textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var el = document.getElementById('b-payload-preview');
+    el.style.color = 'var(--accent2)';
+    setTimeout(function(){ el.style.color = 'var(--text2)'; }, 1200);
+  });
+}
+
+async function runBidassist(isLoadMore) {
+  var token = document.getElementById('b-token').value.trim();
+  if (!token) { alert('Please enter your x-api-key.'); return; }
+  if (!isLoadMore) {
+    bidState.pageNumber=0; bidState.allTenders=[]; bidState.hasMore=false;
+    document.getElementById('b-tender-grid').innerHTML='';
+    document.getElementById('b-results-wrap').style.display='none';
+    document.getElementById('b-load-more').style.display='none';
+    document.getElementById('b-summary-row').classList.remove('show');
+  }
+  var btn = document.getElementById('b-run-btn');
+  var lmBtn = document.getElementById('b-load-more');
+  btn.disabled=true; if(lmBtn) lmBtn.disabled=true;
+  setStatus('b', isLoadMore ? 'Loading page '+(bidState.pageNumber+1)+'…' : 'Searching tenders…', 'loading');
+
+  var payload = {
+    url: document.getElementById('b-url').value,
+    auth_scheme:'x-api-key', token:token, header_name:'x-api-key',
+    method:'POST', json_body:buildBidPayload(bidState.pageNumber), extra_params:{},
+  };
+
+  try {
+    await _rlConsume();
+    var resp = await fetch('/fetch-direct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.detail||resp.statusText);
+    bidState.lastResult=result;
+    var data=result.data, tenders=[], hasMore=false;
+    if (Array.isArray(data)) { tenders=data; }
+    else if (data&&Array.isArray(data.content)) { tenders=data.content; hasMore=data.last===false; }
+    else if (data&&Array.isArray(data.tenders)) { tenders=data.tenders; hasMore=data.last===false; }
+    else if (data&&typeof data==='object') {
+      var keys=Object.keys(data);
+      for(var i=0;i<keys.length;i++){if(Array.isArray(data[keys[i]])){tenders=data[keys[i]];break;}}
+      hasMore=data.last===false;
+    }
+    bidState.allTenders=bidState.allTenders.concat(tenders); bidState.hasMore=hasMore;
+    setStatus('b','Found '+tenders.length+' tenders (page '+(bidState.pageNumber+1)+') · total loaded: '+bidState.allTenders.length,'ok');
+    document.getElementById('b-page-num').textContent=bidState.pageNumber+1;
+    document.getElementById('b-count').textContent=tenders.length;
+    document.getElementById('b-total-loaded').textContent=bidState.allTenders.length;
+    document.getElementById('b-has-more').textContent=hasMore?'Yes':'No';
+    document.getElementById('b-summary-row').classList.add('show');
+    document.getElementById('b-results-wrap').style.display='block';
+    renderTenderCards(tenders, isLoadMore);
+    lmBtn.style.display=hasMore?'flex':'none'; lmBtn.disabled=false;
+    bidState.pageNumber++; updatePayloadPreview();
+  } catch(e) { setStatus('b','Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
+
+function renderTenderCards(tenders, append) {
+  var grid = document.getElementById('b-tender-grid');
+  if (!append) grid.innerHTML = '';
+  if (!tenders || tenders.length === 0) {
+    if (!append) grid.innerHTML = '<div class="tc-empty">No tenders found.</div>';
+    return;
+  }
+  tenders.forEach(function(t) {
+    var card=document.createElement('div'); card.className='tender-card';
+    var title=t.title||t.tender_title||t.name||t.TITLE||'(No title)';
+    var authority=t.authority||t.department||t.organization||t.org_name||t.AUTHORITY_NAME||'';
+    var eligibility=t.eligibility||t.eligibility_criteria||t.ELIGIBILITY||'';
+    var category=t.category||t.work_type||t.CATEGORY||'';
+    var refNo=t.ref_no||t.tender_ref||t.reference_number||t.REF_NO||'';
+    var deadline=t.bid_end_date||t.closing_date||t.submission_date||t.DEADLINE||'';
+    var feedSource=t.feed_source||t.source||t.FEED_SOURCE_ID||'';
+    var value=t.tender_value||t.estimated_value||t.amount||'';
+    var docUrl=t.document_url||t.nit_url||t.pdf_url||t.tender_document||t.DOCUMENT_URL||'';
+    var nitUrl=t.nit_url||t.NIT_URL||'';
+    var html='<div class="tc-head"><div class="tc-title">'+escHtml(title)+'</div>';
+    if(feedSource) html+='<span class="tc-source-badge">'+escHtml(feedSource)+'</span>';
+    html+='</div><div class="tc-meta">';
+    if(authority) html+='<div class="tc-meta-item"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>'+escHtml(authority)+'</div>';
+    if(refNo) html+='<div class="tc-meta-item"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>'+escHtml(refNo)+'</div>';
+    if(deadline) html+='<div class="tc-meta-item"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+escHtml(String(deadline))+'</div>';
+    if(value) html+='<div class="tc-meta-item"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>'+escHtml(String(value))+'</div>';
+    if(category) html+='<div class="tc-meta-item"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>'+escHtml(category)+'</div>';
+    html+='</div>';
+    if(eligibility||docUrl||nitUrl){
+      html+='<div class="tc-divider"></div><div class="tc-body">';
+      if(eligibility) html+='<div class="tc-eligibility"><strong>Eligibility</strong>'+escHtml(String(eligibility).slice(0,300))+(String(eligibility).length>300?'…':'')+'</div>';
+      html+='<div class="tc-actions">';
+      if(docUrl) html+='<a class="btn-pdf" href="'+escHtml(docUrl)+'" target="_blank" rel="noopener"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Download PDF</a>';
+      if(nitUrl&&nitUrl!==docUrl) html+='<a class="btn-pdf" href="'+escHtml(nitUrl)+'" target="_blank" rel="noopener"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>NIT PDF</a>';
+      // Ask Claude about this PDF
+      if(docUrl) html+='<button class="btn-detail" style="border-color:var(--ai);color:var(--ai);" onclick="loadTenderPdfInAI(\''+escHtml(docUrl)+'\',\''+escHtml(title)+'\')">✦ Ask Claude</button>';
+      html+='<button class="btn-detail" onclick="showTenderJSON(this)" data-json="'+escHtml(JSON.stringify(t))+'">{ } Raw JSON</button>';
+      html+='</div></div>';
+    } else {
+      html+='<div class="tc-body"><div class="tc-actions"><button class="btn-detail" onclick="showTenderJSON(this)" data-json="'+escHtml(JSON.stringify(t))+'">{ } Raw JSON</button></div></div>';
+    }
+    card.innerHTML=html; grid.appendChild(card);
+  });
+}
+
+function loadTenderPdfInAI(docUrl, title) {
+  document.getElementById('ai-pdf-url').value   = docUrl;
+  document.getElementById('ai-pdf-label').value = title;
+  switchMode('ai');
+  loadPdfForChat();
+}
+
+function showTenderJSON(btn) {
+  var data = btn.getAttribute('data-json');
+  try { data = JSON.stringify(JSON.parse(data), null, 2); } catch(e){}
+  var pre = btn.closest('.tc-body').querySelector('pre.tender-raw');
+  if (pre) { pre.remove(); btn.textContent='{ } Raw JSON'; return; }
+  var el = document.createElement('pre');
+  el.className='tender-raw'; el.style.marginTop='10px'; el.style.width='100%';
+  el.textContent=data; btn.closest('.tc-body').appendChild(el); btn.textContent='✕ Hide JSON';
+}
+
+function downloadBidassist() { _downloadJSON(bidState.allTenders, 'bidassist_tenders.json'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PDF AI TERMINAL MODE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function checkQuickFill() {
+  var row = document.getElementById('ai-quick-fill-row');
+  if (directResult && directResult._pdfUrl) {
+    row.style.display = 'block';
+  } else {
+    row.style.display = 'none';
+  }
+}
+
+function quickFillFromDirect() {
+  if (!directResult || !directResult._pdfUrl) return;
+  document.getElementById('ai-pdf-url').value   = directResult._pdfUrl;
+  document.getElementById('ai-pdf-label').value = directResult._pdfLabel || '';
+}
+
+async function loadPdfForChat() {
+  var url   = document.getElementById('ai-pdf-url').value.trim();
+  var label = document.getElementById('ai-pdf-label').value.trim() || url.split('/').pop() || 'PDF Document';
+  if (!url) { alert('Please enter a PDF URL or file path.'); return; }
+
+  // We just validate the URL is reachable — actual PDF loading happens per-question
+  // via the server. We do a quick HEAD-like fetch to confirm.
+  var btn = document.getElementById('ai-load-btn');
+  btn.disabled = true;
+  document.getElementById('ai-load-status').classList.add('show');
+  document.getElementById('ai-load-spinner').style.display='block';
+  document.getElementById('ai-load-dot').style.display='none';
+  document.getElementById('ai-load-status-msg').textContent = 'Loading PDF — checking for scanned pages (may take up to 60s for OCR)…';
+
+  try {
+    // Light validation — fetch a small direct request to see if the PDF is accessible
+    var testPayload = { url: url, auth_scheme:'none', method:'GET', extra_params:{} };
+    var resp = await fetch('/fetch-direct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(testPayload)});
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.detail || resp.statusText);
+    var isPdf = result.encoding==='base64' || (result.content_type||'').includes('pdf');
+    if (!isPdf) {
+      throw new Error('The URL does not appear to return a PDF (content-type: '+(result.content_type||'unknown')+').');
+    }
+
+    // Success — update AI state
+    aiState.pdfSource = url;
+    aiState.pdfLabel  = label;
+    aiState.history   = [];
+    aiState.loaded    = true;
+
+    document.getElementById('ai-load-spinner').style.display='none';
+    document.getElementById('ai-load-dot').style.display='block';
+    document.getElementById('ai-load-dot').className='dot ok';
+    document.getElementById('ai-load-status-msg').textContent = 'PDF loaded ✓ — '+label;
+
+    // Update terminal UI
+    var chosenModel = document.getElementById('ai-model-select') ?
+      document.getElementById('ai-model-select').value : 'gemini-1.5-flash';
+    document.getElementById('ai-model-badge').textContent = chosenModel;
+    document.getElementById('ai-terminal-title').textContent = 'PDF AI Terminal — ' + label;
+    document.getElementById('ai-source-display').textContent = label;
+    document.getElementById('ai-question').disabled = false;
+    document.getElementById('ai-send-btn').disabled = false;
+    document.getElementById('ai-suggestions-wrap').style.display = 'block';
+
+    // Clear old chat
+    var log = document.getElementById('ai-log');
+    log.innerHTML = '';
+    // Welcome message
+    appendMessage('assistant', '✦ PDF loaded: **'+label+'**\n\nI can now answer questions about this document. What would you like to know?');
+
+    document.getElementById('ai-question').focus();
+
+  } catch(e) {
+    document.getElementById('ai-load-spinner').style.display='none';
+    document.getElementById('ai-load-dot').style.display='block';
+    document.getElementById('ai-load-dot').className='dot err';
+    document.getElementById('ai-load-status-msg').textContent = 'Error: '+e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function aiHandleKey(e) {
+  // Enter = send, Shift+Enter = newline
+  if (e.key==='Enter' && !e.shiftKey) {
+    e.preventDefault();
+    askClaude();
+  }
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function suggestQ(chip) {
+  var q = chip.textContent;
+  document.getElementById('ai-question').value = q;
+  autoGrow(document.getElementById('ai-question'));
+  document.getElementById('ai-question').focus();
+}
+
+async function askClaude() {
+  if (!aiState.loaded) { alert('Please load a PDF first.'); return; }
+  var question = document.getElementById('ai-question').value.trim();
+  if (!question) return;
+
+  var sendBtn = document.getElementById('ai-send-btn');
+  var textarea = document.getElementById('ai-question');
+  sendBtn.disabled = true;
+  textarea.disabled = true;
+
+  // Add user message
+  appendMessage('user', question);
+  textarea.value = ''; textarea.style.height='auto';
+
+  // Add thinking bubble
+  var thinkId = appendThinking();
+
+  var selectedModel = document.getElementById('ai-model-select') ?
+    document.getElementById('ai-model-select').value : 'gemini-1.5-flash';
+  var payload = {
+    pdf_source:   aiState.pdfSource,
+    question:     question,
+    history:      aiState.history.slice(),   // send current history (text only)
+    source_label: aiState.pdfLabel,
+    model:        selectedModel,
+  };
+
+  try {
+    await _rlConsume();
+    var resp = await fetch('/chat-pdf',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),
+    });
+    var result = await resp.json();
+    if (!resp.ok) throw new Error(result.detail || resp.statusText);
+
+    // Remove thinking bubble
+    removeThinking(thinkId);
+
+    // Append assistant reply
+    appendMessage('assistant', result.answer, result.output_tokens);
+
+    // Update history (plain text only — PDF context only sent on turn 0)
+    aiState.history.push({ role:'user',      content: question });
+    aiState.history.push({ role:'assistant', content: result.answer });
+
+    // Update model badge
+    if (result.model) {
+      document.getElementById('ai-model-badge').textContent = result.model;
+    }
+    // Show whether full PDF context was sent this turn
+    if (result.context_sent === true) {
+      var badge = document.createElement('div');
+      badge.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--accent2);padding:0 4px;';
+      badge.textContent = '↑ full PDF context sent to model this turn';
+      var lastMsg = document.getElementById('ai-log').lastElementChild;
+      if (lastMsg) lastMsg.appendChild(badge);
+    }
+
+    // Update token counts
+    aiState.inTokens  += (result.input_tokens  || 0);
+    aiState.outTokens += (result.output_tokens || 0);
+    aiState.turns     += 1;
+    document.getElementById('ai-in-tokens').textContent  = aiState.inTokens.toLocaleString();
+    document.getElementById('ai-out-tokens').textContent = aiState.outTokens.toLocaleString();
+    document.getElementById('ai-turns').textContent      = aiState.turns;
+    document.getElementById('ai-token-bar').classList.add('show');
+
+  } catch(e) {
+    removeThinking(thinkId);
+    appendMessage('assistant', '⚠ Error: '+e.message);
+  } finally {
+    sendBtn.disabled = false;
+    textarea.disabled = false;
+    textarea.focus();
+  }
+}
+
+function appendMessage(role, text, tokens) {
+  var log = document.getElementById('ai-log');
+  // Remove empty state if present
+  var empty = document.getElementById('ai-empty-state');
+  if (empty) empty.remove();
+
+  var wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+
+  var roleEl = document.createElement('div');
+  roleEl.className = 'msg-role';
+  roleEl.textContent = role === 'user' ? 'you' : 'claude';
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  // Render simple markdown bold/newlines
+  bubble.innerHTML = renderSimpleMd(text);
+
+  wrap.appendChild(roleEl);
+  wrap.appendChild(bubble);
+
+  if (tokens) {
+    var tok = document.createElement('div');
+    tok.className = 'msg-tokens';
+    tok.textContent = tokens + ' tokens';
+    wrap.appendChild(tok);
+  }
+
+  log.appendChild(wrap);
+  log.scrollTop = log.scrollHeight;
+  return wrap;
+}
+
+function renderSimpleMd(text) {
+  // Very light markdown: **bold**, newlines → <br>
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function appendThinking() {
+  var log = document.getElementById('ai-log');
+  var id  = 'think-' + Date.now();
+  var wrap = document.createElement('div');
+  wrap.className = 'msg assistant thinking';
+  wrap.id = id;
+
+  var roleEl = document.createElement('div');
+  roleEl.className = 'msg-role';
+  roleEl.textContent = 'claude';
+
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+
+  wrap.appendChild(roleEl);
+  wrap.appendChild(bubble);
+  log.appendChild(wrap);
+  log.scrollTop = log.scrollHeight;
+  return id;
+}
+
+function removeThinking(id) {
+  var el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function clearChat() {
+  aiState.history   = [];
+  aiState.inTokens  = 0;
+  aiState.outTokens = 0;
+  aiState.turns     = 0;
+  document.getElementById('ai-in-tokens').textContent  = '0';
+  document.getElementById('ai-out-tokens').textContent = '0';
+  document.getElementById('ai-turns').textContent      = '0';
+  document.getElementById('ai-token-bar').classList.remove('show');
+
+  var log = document.getElementById('ai-log');
+  log.innerHTML = '';
+
+  if (aiState.loaded) {
+    appendMessage('assistant', '✦ Chat cleared. Still working on **'+aiState.pdfLabel+'** — ask anything!');
+  } else {
+    log.innerHTML = '<div class="terminal-empty" id="ai-empty-state"><div class="t-icon">✦</div><div>Load a PDF above, then ask Claude anything about it.</div></div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+function _downloadJSON(obj, filename) {
+  var blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+
+// Init
+updatePayloadPreview();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "tender-sandbox",
+  "version": "1.0.0",
+  "description": "Dummy tender API for local/sandbox testing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

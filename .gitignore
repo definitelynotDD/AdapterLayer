@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Logs
+*.log
+
+# Node (root — legacy, can be removed)
+node_modules/
+package-lock.json
+
+# Node (dummyAPI)
+dummyAPI/node_modules/
+dummyAPI/package-lock.json
