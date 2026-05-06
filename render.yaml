@@ -3,7 +3,7 @@ services:
   - type: web
     name: tender-api
     runtime: python
-    pythonVersion: "3.11"
+    pythonVersion: "3.12"
     buildCommand: >-
       apt-get update &&
       apt-get install -y --no-install-recommends tesseract-ocr &&
