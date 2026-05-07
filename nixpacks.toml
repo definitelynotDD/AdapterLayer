@@ -1,8 +1,12 @@
 [phases.setup]
-nixPkgs = ["tesseract", "python311", "python311Packages.pip", "gcc"]
+nixPkgs = ["tesseract", "python311Full", "gcc", "curl"]
 
 [phases.install]
-cmds = ["python3 -m pip install --upgrade pip", "python3 -m pip install -r Requirements.txt"]
+cmds = [
+  "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
+  "python3 get-pip.py",
+  "python3 -m pip install -r Requirements.txt"
+]
 
 [start]
 cmd = "python3 start.py"
