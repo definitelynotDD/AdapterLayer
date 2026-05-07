@@ -4,8 +4,8 @@ nixPkgs = ["tesseract", "python311Full", "gcc", "curl"]
 [phases.install]
 cmds = [
   "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
-  "python3 get-pip.py",
-  "python3 -m pip install -r Requirements.txt"
+  "python3 get-pip.py --break-system-packages",
+  "python3 -m pip install -r Requirements.txt --break-system-packages"
 ]
 
 [start]
