@@ -1,0 +1,22 @@
+[build]
+# Builder to use - nixpacks auto-detects based on files
+builder = "nixpacks"
+
+[[services]]
+name = "api-adapter"
+startCommand = "python start.py"
+buildCommand = "pip install -r Requirements.txt"
+
+[[services.variables]]
+name = "PYTHONUNBUFFERED"
+value = "1"
+
+[[services]]
+name = "dummy-tender-api"
+startCommand = "node server.js"
+rootDirectory = "."
+buildCommand = "npm install"
+
+[[services.variables]]
+name = "PORT"
+value = "3000"
