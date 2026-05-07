@@ -3,23 +3,24 @@ services:
   - type: web
     name: tender-api
     runtime: python
+    pythonVersion: "3.11"
     buildCommand: >-
       apt-get update &&
       apt-get install -y --no-install-recommends tesseract-ocr &&
-      pip install --upgrade pip &&
-      pip install -r Requirements.txt
+      pip3 install --upgrade pip &&
+      pip3 install -r Requirements.txt
     startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
       - key: GOOGLE_API_KEY
-        sync: false   # set the real value in Render dashboard → Environment
+        sync: false
 
   # ── Node.js Dummy Tender API — sandbox for testing ───────────────────────
   - type: web
     name: tender-sandbox
     runtime: node
-    rootDir: dummyAPI        # Render will run everything from this subfolder
+    rootDir: dummyAPI
     buildCommand: npm install
     startCommand: node server.js
     envVars:
