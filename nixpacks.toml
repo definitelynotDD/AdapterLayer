@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["tesseract", "python311", "gcc"]
+
+[phases.install]
+cmds = ["pip install -r Requirements.txt"]
+
+[start]
+cmd = "python start.py"
