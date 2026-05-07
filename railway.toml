@@ -1,22 +1,29 @@
+# Railway.toml for dual-service deployment
+# This file configures both services in one project
+
 [build]
-# Builder to use - nixpacks auto-detects based on files
 builder = "nixpacks"
 
+# Service 1: FastAPI Adapter
 [[services]]
 name = "api-adapter"
+runtime = "python"
 startCommand = "python start.py"
-buildCommand = "pip install -r Requirements.txt"
 
 [[services.variables]]
 name = "PYTHONUNBUFFERED"
 value = "1"
 
+# Service 2: Node.js Dummy Tender API
 [[services]]
 name = "dummy-tender-api"
+runtime = "node"
 startCommand = "node server.js"
-rootDirectory = "."
-buildCommand = "npm install"
 
 [[services.variables]]
 name = "PORT"
 value = "3000"
+
+[[services.variables]]
+name = "NODE_ENV"
+value = "production"

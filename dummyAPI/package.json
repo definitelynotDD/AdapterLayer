@@ -1,12 +1,22 @@
 {
-  "name": "tender-sandbox",
+  "name": "dummy-tender-api",
   "version": "1.0.0",
-  "description": "Dummy tender API for local/sandbox testing",
+  "description": "Dummy Tender API for testing tender data endpoints",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "tender",
+    "api",
+    "dummy",
+    "test"
+  ],
+  "author": "",
+  "license": "ISC",
   "engines": {
-    "node": ">=18.0.0"
-  }
+    "node": ">=20.0.0"
+  },
+  "type": "commonjs"
 }
